@@ -1,150 +1,100 @@
 <template>
-    <div class="w-full max-w-md">
-        <h3 class="text-3xl font-medium mb-4 text-center">Login or Sign up</h3>
+  <div class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
+    <div class="bg-black rounded-xl shadow-2xl p-8 w-full max-w-md">
+      
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-[#19a8ff]">Login / Sign Up</h2>
+        <button @click="$emit('close-email')" class="text-gray-400 hover:text-gray-700 cursor-pointer">✕</button>
+      </div>
 
-        <form @submit.prevent="submit" class="space-y-3">
-            <label class="block text-sm">Email</label>
-            <input v-model="email" type="email" placeholder="you@domain.com"
-                class="w-full px-3 py-2 border rounded-md bg-transparent outline-none focus:ring-2 focus:ring-blue-400"
-                autocomplete="email" />
+      <form v-if="step === 1" @submit.prevent="sendOtp">
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-200 mb-1">Email</label>
+          <input type="email" v-model="email" required class="w-full px-4 py-2 border border-[#19a8ff] focus:outline-none rounded-lg text-white" />
+        </div>
 
-            <p v-if="emailError" class="text-xs text-rose-500">{{ emailError }}</p>
+        <button type="submit" class=" px-4 py-2 bg-[#19a8ff] text-white font-semibold rounded-lg cursor-pointer">
+          {{ isLoading ? 'Sending OTP...' : 'Send OTP' }}
+        </button>
 
-            <div class="flex items-center gap-3">
-                <button type="submit"
-                    class="flex-1 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 active:scale-95 transition">
-                    {{ submitText }}
-                </button>
-
-                <button type="button" @click="toggleMode"
-                    class="px-3 py-2 rounded-md bg-gray-100/10 text-sm hover:bg-gray-100/20">
-                    {{ toggleText }}
-                </button>
-            </div>
-        </form>
-
-        <p v-if="message" :class="['mt-3 text-sm', messageType === 'error' ? 'text-rose-500' : 'text-green-400']">
-            {{ message }}
+        <p v-if="errorMessage" class="mt-4 text-sm text-red-600 text-center">
+          {{ errorMessage }}
         </p>
+      </form>
+
+
+      <form v-else @submit.prevent="verifyOtp">
+        <p class="text-sm mb-3 text-gray-300">OTP sent to <b>{{ email }}</b></p>
+
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-200 mb-1">Enter OTP</label>
+          <input type="text" v-model="otp" required maxlength="6" class="w-full px-4 py-2 border border-[#19a8ff] focus:outline-none rounded-lg text-white" />
+        </div>
+        <!-- <input v-for="i in 6" :key="i" type="text" maxlength="1" class="w-12 h-12 text-center text-lg border border-black m-2 rounded"
+            required /> -->
+
+        <button type="submit" class="px-4 py-2 bg-[#19a8ff] text-white font-semibold rounded-lg cursor-pointer">
+          {{ isLoading ? 'Verifying...' : 'Verify OTP' }}
+        </button>
+
+        <!-- <button @click="step = 1" class="mt-4 text-sm text-indigo-600">Change Email</button> -->
+
+        <p v-if="errorMessage" class="mt-4 text-sm text-red-600 text-center">
+          {{ errorMessage }}
+        </p>
+      </form>
+
     </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref } from "vue";
+import axios from "axios";
 
-const props = defineProps({
-    initialMode: { type: String, default: 'login' }, // 'login' | 'signup'
-    webhookUrl: { type: String, default: '' }        // pass your n8n webhook here
-});
-const emit = defineEmits(['submitted', 'error']);
+const BACKEND_URL = "http://localhost:3001/api";
 
-const email = ref('');
-const emailError = ref('');
-const mode = ref(props.initialMode);
-const message = ref('');
-const messageType = ref('');
-const loading = ref(false);
+const emit = defineEmits(["auth-success", "close-email"]);
 
-watch(() => props.initialMode, (v) => {
-    if (v === 'login' || v === 'signup') mode.value = v;
-});
+const step = ref(1); 
+const email = ref("");
+const otp = ref("");
+const isLoading = ref(false);
+const errorMessage = ref("");
 
-const modeTitle = computed(() => (mode.value === 'login' ? 'Login' : 'Sign Up'));
-const submitText = computed(() => (mode.value === 'login' ? 'Login' : 'Create Account'));
-const toggleText = computed(() => (mode.value === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Login'));
+async function sendOtp() {
+  isLoading.value = true;
+  errorMessage.value = "";
 
-function validateEmail(value) {
-    if (!value) return 'Email is required.';
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(value) ? '' : 'Enter a valid email.';
+  try {
+    await axios.post(`${BACKEND_URL}/send-otp`, { email: email.value });
+    step.value = 2;
+  } catch (err) {
+    errorMessage.value = err.response?.data?.message || "Failed to send OTP";
+  }
+
+  isLoading.value = false;
 }
 
-function toggleMode() {
-    mode.value = mode.value === 'login' ? 'signup' : 'login';
-    emailError.value = '';
-    message.value = '';
-}
+async function verifyOtp() {
+  isLoading.value = true;
+  errorMessage.value = "";
 
-async function submit() {
-    emailError.value = validateEmail(email.value.trim());
-    if (emailError.value) return;
+  try {
+    const resp = await axios.post(`${BACKEND_URL}/verify-otp`, {
+      email: email.value,
+      otp: otp.value,
+    });
 
-    // --------------------------
-    // Build payload
-    // --------------------------
-    const payload = {
-        mode: mode.value,
-        email: email.value.trim()
-    };
+    localStorage.setItem("token", resp.data.token);
+    localStorage.setItem("email", resp.data.email);
+    localStorage.setItem("sessionId", resp.data.sessionId);
 
-    // Attach sessionId if available
-    try {
-        const sid =
-            localStorage.getItem('luxe_sessionId') ||
-            (document.cookie.match(/(^|;\s*)luxe_sessionId=([^;]+)/) || [])[2] ||
-            null;
+    emit("auth-success", resp.data);
+  } catch (err) {
+    errorMessage.value = err.response?.data?.message || "Invalid OTP";
+  }
 
-        if (sid) payload.sessionId = sid;
-    } catch (e) {
-        console.warn('[auth] Could not read sessionId');
-    }
-
-    // If no webhook URL provided (dev mode)
-    if (!props.webhookUrl) {
-        emit('submitted', payload);
-        message.value = mode.value === 'login' ? 'Login submitted.' : 'Signup submitted.';
-        messageType.value = 'success';
-        return;
-    }
-
-    loading.value = true;
-    message.value = '';
-    messageType.value = '';
-
-    // --------------------------
-    // Diagnostic FETCH
-    // --------------------------
-    try {
-        console.log('[auth] webhookUrl:', props.webhookUrl);
-        console.log('[auth] payload:', payload);
-
-        const res = await fetch(props.webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        console.log('[auth] fetch completed - status:', res.status, res.statusText);
-
-        // read raw text for debugging
-        const rawText = await res.text().catch(() => null);
-        console.log('[auth] response raw text:', rawText);
-
-        if (!res.ok) {
-            throw new Error(`Server returned ${res.status} ${res.statusText}. Body: ${rawText}`);
-        }
-
-        // Parse JSON if possible
-        let data = {};
-        try {
-            data = rawText ? JSON.parse(rawText) : {};
-        } catch (_) {
-            data = {};
-        }
-
-        // Return to parent
-        const returned = { ...(data || {}), email: (data?.email || payload.email) };
-        emit('submitted', returned);
-
-        message.value = 'Success — check header.';
-        messageType.value = 'success';
-    } catch (err) {
-        console.error('[auth] submit error:', err);
-        message.value = 'Failed to communicate with server — see console';
-        messageType.value = 'error';
-        emit('error', { error: String(err) });
-    } finally {
-        loading.value = false;
-    }
+  isLoading.value = false;
 }
 </script>

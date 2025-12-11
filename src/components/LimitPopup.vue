@@ -1,74 +1,31 @@
 <template>
-  <transition name="fade">
-    <div
-      v-if="visible"
-      class="fixed inset-0 z-50 flex items-center justify-center"
-      @click.self="close"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Limit reached"
-    >
-      <!-- backdrop -->
-      <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-
-      <!-- panel -->
-      <div class="relative z-10 w-full max-w-sm mx-4">
-        <div class="bg-[#0b0f1a] text-white border border-white/10 rounded-xl shadow-xl p-6">
-          <div class="flex items-start justify-between mb-3">
-            <h3 class="text-lg font-semibold">Limit Reached</h3>
-            <button @click="close" class="text-white/60 hover:text-white" aria-label="Close">✕</button>
-          </div>
-
-          <p class="text-sm text-white/70 mb-5 text-center">
-            You've reached the free limit for anonymous use. Please login to continue chatting.
-          </p>
-
-          <div class="flex items-center justify-center gap-3">
-            <button
-              @click="onLogin"
-              class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm"
-            >
-              Login
-            </button>
-
-            <button
-              @click="onSignup"
-              class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm"
-            >
-              Signup
-            </button>
-          </div>
-        </div>
-      </div>
+  <div v-if="showLimit" class="p-3 mb-4 bg-red-500/10 border border-red-300 rounded-lg shadow-md transition-all duration-300 transform scale-100">
+    <div class="flex items-center space-x-3">
+      <svg class="w-6 h-6 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.308 15c-.77 1.333.192 3 1.732 3z"></path></svg>
+      
+      <p class="text-sm font-medium text-red-800">
+        {{ message }}
+      </p>
     </div>
-  </transition>
+  </div>
 </template>
 
 <script setup>
-import { defineEmits, defineProps } from 'vue';
+import { defineProps } from 'vue';
 
-const props = defineProps({
-  visible: { type: Boolean, default: false }
+defineProps({
+  message: {
+    type: String,
+    required: true,
+    default: "This chat has reached its limit."
+  },
+  showLimit: {
+    type: Boolean,
+    required: true,
+    default: false
+  }
 });
-
-const emit = defineEmits(['update:visible', 'login', 'signup']);
-
-function close() {
-  emit('update:visible', false);
-}
-
-function onLogin() {
-  emit('update:visible', false);
-  emit('login');
-}
-
-function onSignup() {
-  emit('update:visible', false);
-  emit('signup');
-}
 </script>
 
-<style>
-.fade-enter-active, .fade-leave-active { transition: opacity .15s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+<style scoped>
 </style>
