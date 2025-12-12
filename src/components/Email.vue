@@ -83,7 +83,6 @@ async function sendOtp() {
 async function verifyOtp() {
   isLoading.value = true;
   errorMessage.value = "";
-
   try {
     const resp = await axios.post(`${BACKEND_URL}/verify-otp`, {
       email: email.value,
@@ -101,25 +100,18 @@ async function verifyOtp() {
 
   isLoading.value = false;
 }
+
 function handleOtpInput(index, event) {
   const value = event.target.value;
-
-  // Move to next box automatically
   if (value && index < 5) {
     otpInputs.value[index + 1].focus();
   }
-
-  // Build OTP string from all boxes
   otp.value = otpInputs.value.map(i => i.value).join("");
 }
-
 function handleBackspace(index) {
-  // Move to previous box on backspace
   if (index > 0 && !otpInputs.value[index].value) {
     otpInputs.value[index - 1].focus();
   }
-
   otp.value = otpInputs.value.map(i => i.value).join("");
 }
-
 </script>

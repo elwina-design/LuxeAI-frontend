@@ -10,7 +10,8 @@
         <button @click="toggleSidebar" class="md:hidden cursor-pointer">✕</button>
       </div>
 
-      <button @click="startNewChat" class="mb-4 px-4 py-2 bg-[#19a8ff]/80 text-black rounded-lg cursor-pointer">New Chat</button>
+      <button @click="startNewChat" class="mb-4 px-4 py-2 bg-[#19a8ff]/80 text-black rounded-lg cursor-pointer">New
+        Chat</button>
 
       <div class="flex-grow overflow-y-auto space-y-2">
         <div v-for="chat in chatHistoryList" :key="chat.chatId" @click="selectChat(chat.chatId)"
@@ -74,8 +75,12 @@
           <div class="flex space-x-4">
             <input v-model="inputMessage" @keyup.enter="sendMessage" placeholder="Ask me anything..."
               class="flex-1 px-5 py-3 rounded-full bg-gray-200/10 text-gray-200" />
-            <button @click="sendMessage" :disabled="isTyping || !inputMessage.trim()"
-              class="px-6 py-3 rounded-full bg-[#19a8ff] text-black cursor-pointer">Send</button>
+            <button @click="sendMessage" :disabled="isTyping || !inputMessage.trim()" :class="[
+              'px-6 py-3 rounded-full text-black',
+              isTyping || !inputMessage.trim()
+                ? 'bg-[#19a8ff]/90 cursor-not-allowed opacity-50'
+                : 'bg-[#19a8ff] cursor-pointer'
+            ]">Send</button>
           </div>
           <p class="text-xs text-center text-gray-400 mt-2">&copy; Luxeveda 2025. All rights reserved</p>
         </div>
@@ -129,7 +134,6 @@ function api() {
 
 async function ensureSession() {
   if (sessionId.value) {
-    // ping server to verify
     try {
       const resp = await axios.get(`${BACKEND_URL}/session`, { headers: { 'x-session-id': sessionId.value } });
       sessionId.value = resp.data.sessionId;
