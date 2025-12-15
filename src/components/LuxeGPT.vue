@@ -71,7 +71,7 @@
 
         <div class="p-6 bg-[#0b0f13] border-t border-gray-800">
           <button v-for="(q, i) in defaultQuestions" :key="i" @click="handleQuickQuestion(q)"
-            class="mb-6 px-3 py-1.5 border rounded-full text-[#19a8ff]/80 text-sm cursor-pointer">{{ q }}</button>
+            class="mb-6 ml-2 px-3 py-1.5 border rounded-full text-[#19a8ff]/80 text-sm cursor-pointer">{{ q }}</button>
           <div class="flex space-x-4">
             <input v-model="inputMessage" @keyup.enter="sendMessage" placeholder="Ask me anything..."
               class="flex-1 px-5 py-3 rounded-full bg-gray-200/10 text-gray-200" />
